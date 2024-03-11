@@ -1,0 +1,6 @@
+set(PRJ MolHandler)
+file(GLOB_RECURSE srcs CONFIGURE_DEPENDS "src/featurize.cpp" "include/*.h")
+add_library(${PRJ} ${srcs})
+set_target_properties(${PRJ} PROPERTIES LINKER_LANGUAGE CXX)
+target_include_directories(${PRJ} PUBLIC include)
+target_link_libraries(${PRJ} PUBLIC RDKit::SmilesParse Eigen3::Eigen)

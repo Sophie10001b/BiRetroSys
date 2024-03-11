@@ -1,0 +1,6 @@
+set(PRJ Test)
+file(GLOB_RECURSE srcs CONFIGURE_DEPENDS "src/*.cpp" "include/*.h")
+add_library(${PRJ} ${srcs})
+set_target_properties(${PRJ} PROPERTIES LINKER_LANGUAGE CXX)
+target_include_directories(${PRJ} PUBLIC include)
+target_link_libraries(${PRJ} PUBLIC MolHandler Inference Search)

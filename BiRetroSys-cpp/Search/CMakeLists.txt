@@ -1,0 +1,11 @@
+set(PRJ Search)
+file(GLOB_RECURSE srcs CONFIGURE_DEPENDS "src/*.cpp" "include/*.h")
+add_library(${PRJ} ${srcs})
+set_target_properties(${PRJ} PROPERTIES LINKER_LANGUAGE CXX)
+target_include_directories(${PRJ} PUBLIC include)
+
+if(USE_PARALLEL)
+    target_link_libraries(${PRJ} PUBLIC RDKit::Fingerprints Inference PkgConfig::graphviz OpenMP::OpenMP_CXX)
+else()
+    target_link_libraries(${PRJ} PUBLIC RDKit::Fingerprints Inference PkgConfig::graphviz)
+endif()
