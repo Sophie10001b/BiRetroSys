@@ -53,23 +53,23 @@ namespace Inference {
         const std::vector<const char*> inputsName = {"atomFeat", "queryIdx", "keyIdx", "deg", "dist", "bondFeat0", "bondFeat1", "bondFeat2", "bondFeat3", "bondIdx0", "bondIdx1", "bondIdx2", "bondIdx3", "attnBondIdx0", "attnBondIdx1", "attnBondIdx2", "attnBondIdx3", "bondSplit"};
         const std::vector<const char*> outputsName = {"graphOutput"};
 
-        inputs.push_back(std::move(convertTensor<float, float>(mol.atomFeat, this->memInfo)));
+        inputs.push_back(std::move(convertTensor<float, float>(mol.atomFeat, this->memInfo, {mol.atomFeat.rows(), mol.atomFeat.cols()})));
         inputs.push_back(std::move(convertTensor<int64_t, int64_t>(mol.queryIdx, this->memInfo)));
         inputs.push_back(std::move(convertTensor<int64_t, int64_t>(mol.keyIdx, this->memInfo)));
         inputs.push_back(std::move(convertTensor<int64_t, int64_t>(mol.deg, this->memInfo)));
         inputs.push_back(std::move(convertTensor<int64_t, int64_t>(mol.dist, this->memInfo)));
-        inputs.push_back(std::move(convertTensor<float, float>(mol.bondFeat, this->memInfo)));
-        inputs.push_back(std::move(convertTensor<int64_t, int64_t>(mol.kBondFeat[0], this->memInfo)));
-        inputs.push_back(std::move(convertTensor<int64_t, int64_t>(mol.kBondFeat[1], this->memInfo)));
-        inputs.push_back(std::move(convertTensor<int64_t, int64_t>(mol.kBondFeat[2], this->memInfo)));
-        inputs.push_back(std::move(convertTensor<int64_t, int64_t>(mol.bondIdx[0], this->memInfo)));
-        inputs.push_back(std::move(convertTensor<int64_t, int64_t>(mol.bondIdx[1], this->memInfo)));
-        inputs.push_back(std::move(convertTensor<int64_t, int64_t>(mol.bondIdx[2], this->memInfo)));
-        inputs.push_back(std::move(convertTensor<int64_t, int64_t>(mol.bondIdx[3], this->memInfo)));
-        inputs.push_back(std::move(convertTensor<int64_t, int64_t>(mol.attnBondIdx[0], this->memInfo)));
-        inputs.push_back(std::move(convertTensor<int64_t, int64_t>(mol.attnBondIdx[1], this->memInfo)));
-        inputs.push_back(std::move(convertTensor<int64_t, int64_t>(mol.attnBondIdx[2], this->memInfo)));
-        inputs.push_back(std::move(convertTensor<int64_t, int64_t>(mol.attnBondIdx[3], this->memInfo)));
+        inputs.push_back(std::move(convertTensor<float, float>(mol.bondFeat, this->memInfo, {mol.bondFeat.rows(), mol.bondFeat.cols()})));
+        inputs.push_back(std::move(convertTensor<int64_t, int64_t>(mol.kBondFeat[0], this->memInfo, {mol.kBondFeat[0].rows()})));
+        inputs.push_back(std::move(convertTensor<int64_t, int64_t>(mol.kBondFeat[1], this->memInfo, {mol.kBondFeat[1].rows()})));
+        inputs.push_back(std::move(convertTensor<int64_t, int64_t>(mol.kBondFeat[2], this->memInfo, {mol.kBondFeat[2].rows()})));
+        inputs.push_back(std::move(convertTensor<int64_t, int64_t>(mol.bondIdx[0], this->memInfo, {2, mol.bondIdx[0].cols()})));
+        inputs.push_back(std::move(convertTensor<int64_t, int64_t>(mol.bondIdx[1], this->memInfo, {2, mol.bondIdx[1].cols()})));
+        inputs.push_back(std::move(convertTensor<int64_t, int64_t>(mol.bondIdx[2], this->memInfo, {2, mol.bondIdx[2].cols()})));
+        inputs.push_back(std::move(convertTensor<int64_t, int64_t>(mol.bondIdx[3], this->memInfo, {2, mol.bondIdx[3].cols()})));
+        inputs.push_back(std::move(convertTensor<int64_t, int64_t>(mol.attnBondIdx[0], this->memInfo, {mol.attnBondIdx[0].cols()})));
+        inputs.push_back(std::move(convertTensor<int64_t, int64_t>(mol.attnBondIdx[1], this->memInfo, {mol.attnBondIdx[1].cols()})));
+        inputs.push_back(std::move(convertTensor<int64_t, int64_t>(mol.attnBondIdx[2], this->memInfo, {mol.attnBondIdx[2].cols()})));
+        inputs.push_back(std::move(convertTensor<int64_t, int64_t>(mol.attnBondIdx[3], this->memInfo, {mol.attnBondIdx[3].cols()})));
         inputs.push_back(std::move(convertTensor<int64_t, int64_t>(mol.bondSplit, this->memInfo)));
         
         // for (int i=0; i < inputs.size(); i++){

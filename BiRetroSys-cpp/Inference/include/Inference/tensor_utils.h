@@ -25,10 +25,13 @@ namespace Inference {
     }
     
     template <typename Src, typename Tgt>
-    inline Ort::Value convertTensor(MatRX<Src> &srcMat, Ort::MemoryInfo &memInfo){
+    inline Ort::Value convertTensor(MatRX<Src> &srcMat, Ort::MemoryInfo &memInfo, const std::vector<int64_t> &assumSize={}){
         std::vector<int64_t> matSize;
-        if (srcMat.rows() > 1){matSize.push_back(srcMat.rows());}
-        if (srcMat.cols() > 1 || srcMat.cols() == 1 && srcMat.rows() == 1){matSize.push_back(srcMat.cols());}
+        if (assumSize.size() != 0) matSize = assumSize;
+        else{
+            if (srcMat.rows() > 1){matSize.push_back(srcMat.rows());}
+            if (srcMat.cols() > 1 || srcMat.cols() == 1 && srcMat.rows() == 1){matSize.push_back(srcMat.cols());}
+        }
         return Ort::Value::CreateTensor<Tgt>(
             memInfo, srcMat.data(), srcMat.size(),
             matSize.data(), matSize.size()
@@ -452,7 +455,7 @@ namespace Inference {
         T sumData = 0;
         std::for_each(data, data + count, [&temperature](T &a){a = std::exp(a / temperature);});
         for (int i=0; i < sizes; i++){
-            sumData = std::reduce(data + i * dimSize, data + (i + 1) * dimSize, 0);
+            sumData = std::reduce(data + i * dimSize, data + (i + 1) * dimSize, T(0));
             if (needLog){
                 std::for_each(data + i * dimSize, data + (i + 1) * dimSize, [&sumData](T &a){a = std::log(a / sumData);});
             }
@@ -471,23 +474,68 @@ namespace Inference {
         std::vector<T> topkData(repeatCount * topk);
         std::vector<int64_t> topkIdx(repeatCount * topk);
 
+        auto __less = [](const T &a, const T &b){return a < b;};
+        auto __greater = [](const T &a, const T &b){return a > b;};
+
+        // heap sort
+        auto __createHeap = [&__less, &__greater](std::vector<T> &tgt, std::vector<int64_t> &tgtIdx, int64_t begin, int64_t end, const bool largest=true) -> void{
+            int64_t parent = begin;
+            int64_t child = parent * 2 + 1;
+            auto __cmp = largest ? __greater : __less;
+            while (child <= end){
+                if (child + 1 <= end && __cmp(tgt[child+1], tgt[child])) child++;
+                if (!__cmp(tgt[child], tgt[parent])) break;
+                std::swap(tgt[child], tgt[parent]);
+                std::swap(tgtIdx[child], tgtIdx[parent]);
+                parent = child; child = child * 2 + 1;
+            }
+        };
+
+        auto __cmp = largest ? __greater : __less;
         #pragma omp parallel for
         for (int i=0; i < repeatCount; i++){
-            std::vector<T> tempData(copyCount);
-            std::vector<int64_t> tempIdx(copyCount);
-            std::copy(data + i * copyCount, data + (i + 1) * copyCount, tempData.begin());
+            std::vector<T> tempData(topk);
+            std::vector<int64_t> tempIdx(topk);
+            std::copy(data + i * copyCount, data + i * copyCount + topk, tempData.begin());
             std::iota(tempIdx.begin(), tempIdx.end(), 0);
-            for (int k=0; k < topk; k++){
-                for (int j=tempData.size() - 1; j > k; j--){
-                    if ((tempData[j] > tempData[j-1] && largest) || (tempData[j] < tempData[j-1] && !largest)){
-                        std::swap(tempData[j], tempData[j-1]);
-                        std::swap(tempIdx[j], tempIdx[j-1]);
-                    }
+
+            for (int k=topk/2-1; k >= 0; k--) __createHeap(tempData, tempIdx, k, topk-1, !largest);
+            for (int k=topk; k < copyCount; k++){
+                if (__cmp(data[i*copyCount+k], tempData[0])){
+                    tempData[0] = data[i*copyCount+k];
+                    tempIdx[0] = k;
+                    __createHeap(tempData, tempIdx, 0, topk-1, !largest);
                 }
             }
-            std::copy(tempData.begin(), tempData.begin() + topk, topkData.begin() + i * topk);
-            std::copy(tempIdx.begin(), tempIdx.begin() + topk, topkIdx.begin() + i * topk);
+
+            // final sort
+            for (int k=topk/2-1; k >= 0; k--) __createHeap(tempData, tempIdx, k, topk-1, !largest);
+            for (int k=topk-1; k >= 0; k--){
+                std::swap(tempData[0], tempData[k]);
+                std::swap(tempIdx[0], tempIdx[k]);
+                __createHeap(tempData, tempIdx, 0, k-1, !largest);
+            }
+            std::copy(tempData.begin(), tempData.end(), topkData.begin() + i * topk);
+            std::copy(tempIdx.begin(), tempIdx.end(), topkIdx.begin() + i * topk);
         }
+
+        // #pragma omp parallel for
+        // for (int i=0; i < repeatCount; i++){
+        //     std::vector<T> tempData(copyCount);
+        //     std::vector<int64_t> tempIdx(copyCount);
+        //     std::copy(data + i * copyCount, data + (i + 1) * copyCount, tempData.begin());
+        //     std::iota(tempIdx.begin(), tempIdx.end(), 0);
+        //     for (int k=0; k < topk; k++){
+        //         for (int j=tempData.size() - 1; j > k; j--){
+        //             if ((tempData[j] > tempData[j-1] && largest) || (tempData[j] < tempData[j-1] && !largest)){
+        //                 std::swap(tempData[j], tempData[j-1]);
+        //                 std::swap(tempIdx[j], tempIdx[j-1]);
+        //             }
+        //         }
+        //     }
+        //     std::copy(tempData.begin(), tempData.begin() + topk, topkData.begin() + i * topk);
+        //     std::copy(tempIdx.begin(), tempIdx.begin() + topk, topkIdx.begin() + i * topk);
+        // }
         if (del){delete []data;}
         return std::make_tuple(topkData, topkIdx);
     }

@@ -11,6 +11,8 @@ namespace Search {
         this->rn = isTerminal ? 0 : value;
         this->vmt = 0;
 
+        this->gvnode = nullptr;
+
         if (parent) parent->children.push_back(this);
     }
 
@@ -65,8 +67,17 @@ namespace Search {
         else this->parent->parent->upToDownUpdate();
     }
 
-    str moleculeNode::getStrFeature(){
-        return std::to_string(this->id) + " | " + this->mol;
+    void moleculeNode::vizPrepare(Agraph_t *curGraph){
+        str nodeName = std::to_string(this->id) + " | " + this->mol;
+        this->gvnode = agnode(curGraph, nodeName.data(), 1);
+        
+        str nodeColor = this->isOpen ? "lightgrey" : "aquamarine";
+
+        if (this->hasFound) nodeColor = "lightblue";
+        else if (this->isTerminal) nodeColor = "lightyellow";
+        agsafeset(this->gvnode, "color", nodeColor.c_str(), "");
+        agsafeset(this->gvnode, "shape", "box", "");
+        agsafeset(this->gvnode, "style", "filled", "");
     }
 
     moleculeNode::~moleculeNode(){}
@@ -79,6 +90,8 @@ namespace Search {
         this->isOpen = true;
         this->costs = 0;
         this->rn = 0;
+
+        this->gvnode = nullptr;
 
         if (parent) parent->children.push_back(this);
     }
@@ -112,16 +125,23 @@ namespace Search {
         for (const auto mol : this->children) mol->updateVmt();
     }
 
-    str reactionNode::getStrFeature(){
-        return std::to_string(this->id);
+    void reactionNode::vizPrepare(Agraph_t *curGraph){
+        this->gvnode = agnode(curGraph, std::to_string(this->id).data(), 1);
+        
+        str nodeColor = this->isOpen ? "lightgrey" : "aquamarine";
+
+        if (this->hasFound) nodeColor = "lightblue";
+        agsafeset(this->gvnode, "color", nodeColor.c_str(), "");
+        agsafeset(this->gvnode, "shape", "rarrow", "");
+        agsafeset(this->gvnode, "style", "filled", "");
     }
 
     reactionNode::~reactionNode(){}
 
     // searchTree
-    searchTree::searchTree(const str &target, const str &targetName, const std::unordered_set<str> &terminalMol, const int expansionWidth, const int checkWidth, const int singleSteps, const float T): target(target), targetName(targetName), terminalMol(terminalMol), expansionWidth(expansionWidth), checkWidth(checkWidth), singleSteps(singleSteps), T(T){
+    searchTree::searchTree(const str &target, const str &targetName, const std::unordered_set<str> *terminalMol, const int expansionWidth, const int checkWidth, const int singleSteps, const float T): target(target), targetName(targetName), terminalMol(terminalMol), expansionWidth(expansionWidth), checkWidth(checkWidth), singleSteps(singleSteps), T(T){
         this->hasFound = false;
-        if (this->terminalMol.find(this->target) != this->terminalMol.end()){
+        if (this->terminalMol->find(this->target) != this->terminalMol->end()){
             this->hasFound = true;
             outputLog("Target Molecule already in terminal Molecules.", this->searchLog);
         }
@@ -132,17 +152,18 @@ namespace Search {
         this->excludeMols = {"", "CC"};
 
         // load LOG
-        str logName = std::filesystem::current_path();
-        logName += "/" + targetName;
+        str logName = std::filesystem::current_path().parent_path();
+        logName += "/Search/" + targetName + "/";
         if (!std::filesystem::exists(logName)) std::filesystem::create_directories(logName);
-        
-        logName += "/" + targetName + ".log";
-        this->searchLog.open(logName, std::ios::out | std::ios::app | std::ios::trunc);
+
+        this->savePath = logName;
+        logName += targetName + ".log";
+        this->searchLog.open(logName, std::ios::out | std::ios::trunc);
     }
 
-    int searchTree::multiStepSearch(const int steps, const int earlyStop, const float lowerBound, const bool consistCheck){
+    std::pair<bool, int> searchTree::multiStepSearch(const int steps, const int earlyStop, const float lowerBound, const bool consistCheck){
+        int step = 0;
         if (!this->hasFound){
-            int step = 0;
             for (; step < steps; step++){
                 moleculeNode *nextMol = nullptr;
                 float minCost = MAXFLOAT;
@@ -157,7 +178,7 @@ namespace Search {
                     outputLog("No open nodes, search terminate.", this->searchLog);
                     break;
                 }
-                outputLog("Step " + std::to_string(step) + ": Trying to expand " + nextMol->mol, this->searchLog);
+                outputLog("Step " + std::to_string(step+1) + "/" + std::to_string(steps) + ": Trying to expand " + nextMol->mol, this->searchLog);
 
                 auto [expandSmis, expandScores] = this->filterRun(nextMol->mol, this->inferFun({nextMol->mol}), lowerBound, consistCheck);
 
@@ -169,11 +190,11 @@ namespace Search {
                 if (this->hasFound && step+1 > earlyStop) break;
             }
         }
-        return this->finishSearch();
+        return std::make_pair(this->finishSearch(), step+1);
     }
 
     moleculeNode *searchTree::addMol(const str &mol, reactionNode *parent, float value){
-        moleculeNode *newMol = new moleculeNode(this->molNodes.size(), mol, value, parent, this->terminalMol.find(mol) != this->terminalMol.end());
+        moleculeNode *newMol = new moleculeNode(this->molNodes.size(), mol, value, parent, this->terminalMol->find(mol) != this->terminalMol->end());
         this->molNodes.push_back(newMol);
         return newMol;
     }
@@ -285,6 +306,8 @@ namespace Search {
         int64_t beamSize = isRetro ? this->expansionWidth : this->checkWidth;
         auto [inferRes, inferScore] = this->inferModel->inferRun(smis, lTask, beamSize, smis.size(), 0.0, 1, this->singleSteps, 1, this->T, beamSize); // [batchSize * beamSize]
 
+        for (auto &p : smis) this->excludeMols.insert(p);
+
         // canonical && filter
         std::vector<std::unordered_map<str, float>> filterRes(smis.size(), std::unordered_map<str, float>());
         for (int i=0; i < inferRes.size(); i++){
@@ -294,9 +317,10 @@ namespace Search {
         }
         for (auto &m : filterRes){
             std::for_each(m.begin(), m.end(), [](auto &p){p.second = exp(p.second);});
-            float scoreSum = std::reduce(m.begin(), m.end(), 0.0, [](float curSum, const auto &p){return curSum + p.second;});
+            float scoreSum = std::reduce(m.begin(), m.end(), 0.0f, [](float curSum, const auto &p){return curSum + p.second;});
             std::for_each(m.begin(), m.end(), [&scoreSum](auto &p){p.second /= scoreSum;});
         }
+        for (auto &p : smis) this->excludeMols.erase(p);
         return filterRes;
     }
 
@@ -304,54 +328,95 @@ namespace Search {
         GVC_t *gvc = gvContext();
         Agraph_t *G = agopen("g", Agdirected, 0);
 
-        std::queue<std::pair<moleculeNode*, reactionNode*>> qNode;
-        qNode.push(std::make_pair(this->root, nullptr));
+        std::queue<std::pair<std::variant<moleculeNode*, reactionNode*>, std::variant<moleculeNode*, reactionNode*>>> qNode;
+        reactionNode *tempNode = nullptr;
+        this->root->vizPrepare(G);
+        qNode.push(std::make_pair(this->root, tempNode));
+
         while (!qNode.empty()){
-            auto [node, parent] = qNode.front(); qNode.pop();
-
-            str molColor = node->isOpen ? "lightgrey" :"aquamarine";
-            if (node->isTerminal) molColor = "lightyellow";
-            else if (node->hasFound) molColor = "lightblue";
-
-            str reacColor = parent->isOpen ? "lightgrey" :"aquamarine";
-            if (parent->hasFound) reacColor = "lightblue";
-            
-            auto mol = agnode(G, node->getStrFeature().data(), 1);
-            agsafeset(mol, "color", molColor.c_str(), "");
-            agsafeset(mol, "shape", "box", "");
-            agsafeset(mol, "style", "filled", "");
-
-            Agnode_t *reac = nullptr;
-            if (!parent){
-                reac = agnode(G, parent->getStrFeature().data(), 1);
-                agsafeset(mol, "color", reacColor.c_str(), "");
-                agsafeset(mol, "shape", "rarrow", "");
-                agsafeset(mol, "style", "filled", "");
+            auto [__node, __parent] = qNode.front(); qNode.pop();
+            // reactionNode -> moleculeNode
+            if (std::get_if<moleculeNode*>(&__node)){
+                auto node = std::get<moleculeNode*>(__node);
+                auto parent = std::get<reactionNode*>(__parent);
+                if (parent) auto bond = agedge(G, parent->gvnode, node->gvnode, "", 1);
+                if (node->children.size() > 0){
+                    for (auto &p : node->children){
+                        p->vizPrepare(G);
+                        qNode.push(std::make_pair(p, node));
+                    }
+                }
             }
-
-            if (!reac){
-                str bondLabel = std::to_string(exp(-parent->cost));
+            else if (std::get_if<reactionNode*>(&__node)){
+                // moleculeNode -> reactionNode
+                auto node = std::get<reactionNode*>(__node);
+                auto parent = std::get<moleculeNode*>(__parent);
+                str bondLabel = std::to_string(exp(-node->cost));
                 bondLabel = bondLabel.substr(0, bondLabel.find('.') + 3);
-                auto bond = agedge(G, reac, mol, bondLabel.data(), 1);
-            }
-
-            for (auto nextReac : node->children){
-
+                auto bond = agedge(G, parent->gvnode, node->gvnode, bondLabel.data(), 1);
+                if (node->children.size() > 0){
+                    for (auto &p : node->children){
+                        p->vizPrepare(G);
+                        qNode.push(std::make_pair(p, node));
+                    }
+                }
             }
         }
+        agsafeset(G, "dpi", "600", "");
+        agsafeset(G, "rankdir", "LR", "");
+        gvLayout(gvc, G, "dot");
+        gvRenderFilename(gvc, G, "pdf", (name + ".pdf").c_str());
+        gvFreeLayout(gvc, G);
+        agclose(G);
+        gvFreeContext(gvc);
     }
 
     void searchTree::visualizationBest(const str &name){
+        GVC_t *gvc = gvContext();
+        Agraph_t *G = agopen("g", Agdirected, 0);
 
+        std::queue<moleculeNode*> qNode;
+        this->root->vizPrepare(G);
+        qNode.push(this->root);
+
+        while (!qNode.empty()){
+            auto node = qNode.front(); qNode.pop();
+            if (node->hasFound){
+                reactionNode *bestReaction = nullptr;
+                if (node->children.size() > 0){
+                    for (auto p : node->children){
+                        if (p->hasFound && (!bestReaction || p->cost < bestReaction->cost)) bestReaction = p;
+                    }
+                    str bondLabel = std::to_string(exp(-bestReaction->cost));
+                    bondLabel = bondLabel.substr(0, bondLabel.find('.') + 3);
+                    bestReaction->vizPrepare(G);
+                    auto bond = agedge(G, node->gvnode, bestReaction->gvnode, bondLabel.data(), 1);
+
+                    for (auto p : bestReaction->children){
+                        p->vizPrepare(G);
+                        auto chbond = agedge(G, bestReaction->gvnode, p->gvnode, "", 1);
+                        qNode.push(p);
+                    }
+                }
+            }
+        }
+        agsafeset(G, "dpi", "600", "");
+        agsafeset(G, "rankdir", "LR", "");
+        gvLayout(gvc, G, "dot");
+        gvRenderFilename(gvc, G, "pdf", (name + ".pdf").c_str());
+        gvFreeLayout(gvc, G);
+        agclose(G);
+        gvFreeContext(gvc);
     }
 
     bool searchTree::finishSearch(){
-        this->visualization(this->targetName + "-Tree");
-        if (this->hasFound) this->visualizationBest(this->targetName + "-BestRoute");
+        this->visualization(this->savePath + this->targetName + "-Tree");
+        if (this->hasFound) this->visualizationBest(this->savePath + this->targetName + "-BestRoute");
         return this->hasFound;
     }
 
     searchTree::~searchTree(){
+        this->searchLog.close();
         for (auto p : this->molNodes) delete p;
         for (auto p : this->reacNodes) delete p;
         std::vector<moleculeNode*>().swap(this->molNodes);
@@ -404,7 +469,8 @@ namespace Search {
         std::getline(terminalMols, line);
 
         while (std::getline(terminalMols, line)){
-            int start = 1, end=line.size() - 1;
+            int start = 0, end=line.size() - 1;
+            for (; start < end && line[start] != ','; start++){}
             for (; start < end && line[end] != ','; end--){}
             if (start < end) finalSet.insert(line.substr(start+1, end-start-1));
         }

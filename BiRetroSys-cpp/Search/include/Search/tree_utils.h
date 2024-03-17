@@ -19,6 +19,8 @@ namespace Search {
         float rn;
         float vmt;
 
+        Agnode_t *gvnode;
+
         moleculeNode(const int id, const str &mol, const float value, reactionNode *parent, bool isTerminal);
 
         void init();
@@ -27,7 +29,7 @@ namespace Search {
         void close();
         void getAncestor(std::unordered_set<str> &ancestor);
         void upToDownUpdate();
-        str getStrFeature();
+        void vizPrepare(Agraph_t *curGraph);
 
         ~moleculeNode();
     };
@@ -45,12 +47,14 @@ namespace Search {
         float costs;
         float rn;
 
+        Agnode_t *gvnode;
+
         reactionNode(const int id, const float value, moleculeNode *parent);
 
         void init();
         void update(float dRn);
         void updateVmt();
-        str getStrFeature();
+        void vizPrepare(Agraph_t *curGraph);
 
         ~reactionNode();
 
@@ -60,22 +64,24 @@ namespace Search {
 
     class searchTree {
         public:
+        str savePath;
         const str target;
         const str targetName;
-        const std::unordered_set<str> terminalMol;
+        const std::unordered_set<str> *terminalMol;
         const int expansionWidth;
         const int checkWidth;
         const int singleSteps;
         const float T;
         bool hasFound;
+        std::ofstream searchLog;
 
         std::vector<moleculeNode*> molNodes;
         std::vector<reactionNode*> reacNodes;
         std::unordered_set<str> excludeMols;
 
-        searchTree(const str &target, const str &targetName, const std::unordered_set<str> &terminalMol, const int expansionWidth=10, const int checkWidth=10, const int singleSteps=150, const float T=1.0);
+        searchTree(const str &target, const str &targetName, const std::unordered_set<str> *terminalMol, const int expansionWidth=10, const int checkWidth=10, const int singleSteps=150, const float T=1.0);
 
-        int multiStepSearch(const int steps=100, const int earlyStop=-1, const float lowerBound=0.1, const bool consistCheck=true);
+        std::pair<bool, int> multiStepSearch(const int steps=100, const int earlyStop=-1, const float lowerBound=0.1, const bool consistCheck=true);
 
         ~searchTree();
 
@@ -83,8 +89,6 @@ namespace Search {
         moleculeNode *root;
         valueModel *valModel;
         Inference::SeqAGraphInfer *inferModel;
-
-        std::ofstream searchLog;
 
         std::vector<float> valueFun(const std::vector<str> &smis);
         std::vector<std::unordered_map<str, float>> inferFun(const std::vector<str> &smis, const bool isRetro=true);

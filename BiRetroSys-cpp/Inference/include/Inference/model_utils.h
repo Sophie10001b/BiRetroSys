@@ -96,19 +96,6 @@ namespace Inference {
 //----------------------------------------------------------------------------
     class SeqAGraphInfer {
         public:
-        std::vector<str> model50kDir = {
-            "/Users/sophie/Code/BiRetroSys/BiRetroSys/Models/50k/encoder.onnx",
-            "/Users/sophie/Code/BiRetroSys/BiRetroSys/Models/50k/extra_embedding.onnx",
-            "/Users/sophie/Code/BiRetroSys/BiRetroSys/Models/50k/decoder.onnx"
-        };
-        str vocab50kDir = "/Users/sophie/Code/BiRetroSys/BiRetroSys/Models/50k/vocabulary(uspto_50k).txt";
-        std::vector<str> modelfullDir = {
-            "/Users/sophie/Code/BiRetroSys/BiRetroSys/Models/full/encoder.onnx",
-            "/Users/sophie/Code/BiRetroSys/BiRetroSys/Models/full/extra_embedding.onnx",
-            "/Users/sophie/Code/BiRetroSys/BiRetroSys/Models/full/decoder.onnx"
-        };
-        str vocabfullDir = "/Users/sophie/Code/BiRetroSys/BiRetroSys/Models/full/vocabulary(uspto_full).txt";
-
         std::map<str, int64_t> vocab;
         std::map<int64_t, str> rvocab;
         MolHandler::molPreprocess molHandler = MolHandler::molPreprocess();

@@ -156,7 +156,7 @@ namespace MolHandler {
         );
 
         //Generate canonicalize SMILES
-        std::tuple<str, bool> canonicalizeSmiles(const str &smi, const bool heavyAtomCheck=true);
+        std::tuple<str, bool> canonicalizeSmiles(const str &smi, const bool heavyAtomCheck=false);
 
         //Generate sequence with vocabulary
         MatRX<int64_t> generateSeq(const str &smi, std::map<str, int64_t> *vocab=nullptr);
