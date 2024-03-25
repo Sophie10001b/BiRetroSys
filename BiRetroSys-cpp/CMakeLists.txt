@@ -50,7 +50,8 @@ add_subdirectory(Inference)
 add_subdirectory(Search)
 add_subdirectory(Test)
 
-add_executable(${PRJ} "${PROJECT_SOURCE_DIR}/Test/src/search_test.cpp")
+# add_executable(${PRJ} "${PROJECT_SOURCE_DIR}/Test/src/search_test.cpp")
 # add_executable(${PRJ} "${PROJECT_SOURCE_DIR}/Search/src/valueFunction.cpp")
+add_executable(${PRJ} "get_search.cpp")
 
 target_link_libraries(${PRJ} PRIVATE MolHandler Inference Search Test)
