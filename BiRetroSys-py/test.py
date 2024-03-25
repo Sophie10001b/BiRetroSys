@@ -23,7 +23,7 @@ def datasetTest(
     terminalMols = loadTerminalMols()
 
     valModel = valueModel(2048)
-    inferModel = onnxInfer("50k")
+    inferModel = onnxInfer("full")
 
     valueFun = lambda x: valModel.getValue(x) # list[str]
 
