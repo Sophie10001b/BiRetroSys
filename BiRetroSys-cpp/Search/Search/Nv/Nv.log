@@ -1,0 +1,11 @@
+[2024-03-25 : 18:02:45]  Step 1/100: Trying to expand CC1(C2C1C(N(C2)C(=O)C(C(C)(C)C)NC(=O)C(F)(F)F)C(=O)NC(CC3CCNC3=O)C#N)C
+[2024-03-25 : 18:02:51]  Step 2/100: Trying to expand CC1(C)C2CNC(C(=O)NC(C#N)CC3CCNC3=O)C21
+[2024-03-25 : 18:02:53]  Step 3/100: Trying to expand CC(C)(C)C(NC(=O)C(F)(F)F)C(=O)N1CC2C(C1C(=O)O)C2(C)C
+[2024-03-25 : 18:02:56]  Step 4/100: Trying to expand N#CC(N)CC1CCNC1=O
+[2024-03-25 : 18:02:58]  Step 5/100: Trying to expand CCOC(=O)C1C2C(CN1C(=O)C(NC(=O)C(F)(F)F)C(C)(C)C)C2(C)C
+[2024-03-25 : 18:03:01]  Step 6/100: Trying to expand CC(C)(C)OC(=O)N1CC2C(C1C(=O)NC(C#N)CC1CCNC1=O)C2(C)C
+[2024-03-25 : 18:03:04]  Step 7/100: Trying to expand N#CC(N)CC1CCNC1=O
+[2024-03-25 : 18:03:06]  Step 8/100: Trying to expand O=CCC1CCNC1=O
+[2024-03-25 : 18:03:07]  Step 9/100: Trying to expand COC=CC1CCNC1=O
+[2024-03-25 : 18:03:09]  Step 10/100: Trying to expand COC(=O)C1C2C(CN1C(=O)C(NC(=O)C(F)(F)F)C(C)(C)C)C2(C)C
+[2024-03-25 : 18:03:12]  Route has found!
