@@ -1,8 +1,4 @@
 import os
-import logging
-import pandas as pd
-
-import time
 
 from typing import Optional
 from Inference.onnxInference import onnxInfer
@@ -23,13 +19,14 @@ class retroSearch:
         setLogger()
         self.terminalMols = loadTerminalMols()
     
-    def multiStepRetroSearch(self, targetMol: str, expansionWidth: int=10, checkWidth: int=10, singleSteps: int=150, multiSteps: int=100, T: float=1.0):
+    def multiStepRetroSearch(self, targetMol: str, expansionWidth: int=20, checkWidth: int=20, singleSteps: int=150, multiSteps: int=100, T: float=1.0):
         valueFun = lambda x: self.valueModel.getValue(x) # list[str]
         inferFun = lambda smi, excludeMol: self.inferModel.Inference(smi, [0 for _ in range(len(smi))], expansionWidth, expansionWidth, singleSteps, T, excludeMol) #return list[list], batch*beam
         checkFun = lambda smi, excludeMol: self.inferModel.Inference(smi, [1 for _ in range(len(smi))], checkWidth, checkWidth, singleSteps, T, excludeMol) #return list[list], batch*beam
 
         searchTree = molTree(targetMol, self.terminalMols, valueFun, inferFun, checkFun)
         res = searchTree.search(multiSteps, lowerbound=0.1, earlyStop=multiSteps)
+        pass
 
 if __name__ == "__main__":
     search = retroSearch()
@@ -38,3 +35,4 @@ if __name__ == "__main__":
     example_smi = "CC1(C2C1C(N(C2)C(=O)C(C(C)(C)C)NC(=O)C(F)(F)F)C(=O)NC(CC3CCNC3=O)C#N)C"
     # example_smi = "C1CC(=O)NC(=O)C1N2CC3=C(C2=O)C=CC=C3N"
     search.multiStepRetroSearch(example_smi, expansionWidth=20, checkWidth=20, T=1.0)
+    pass

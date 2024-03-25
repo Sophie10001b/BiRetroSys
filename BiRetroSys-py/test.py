@@ -1,7 +1,5 @@
 import os
 import time
-import math
-import numpy as np
 import pickle
 import logging
 
@@ -14,8 +12,8 @@ curDir = os.path.dirname(os.path.realpath(__file__))
 
 def datasetTest(
     name: str="test",
-    expansionWidth: int=10,
-    checkWidth: int=10, 
+    expansionWidth: int=20,
+    checkWidth: int=20, 
     singleSteps: int=150, 
     multiSteps: int=50, 
     T: float=1.0,
@@ -25,7 +23,7 @@ def datasetTest(
     terminalMols = loadTerminalMols()
 
     valModel = valueModel(2048)
-    inferModel = onnxInfer()
+    inferModel = onnxInfer("50k")
 
     valueFun = lambda x: valModel.getValue(x) # list[str]
 
@@ -45,7 +43,7 @@ def datasetTest(
         targetMol = route[0].split(">")[0]
         searchTree = molTree(targetMol, terminalMols, valueFun, inferFun, checkFun)
 
-        res, cost = searchTree.search(multiSteps, f"Tree{i}", f"bestRoute{i}", 0, lowerbound=0.01, consistCheck=consistCheck)
+        res, cost = searchTree.search(multiSteps, f"Tree{i}", f"bestRoute{i}", 0, lowerbound=0.1, consistCheck=consistCheck, checkLowerBound=0.01)
         costTime = time.perf_counter() - start
         
         if res:
@@ -59,8 +57,8 @@ def datasetTest(
 
 if __name__ == "__main__":
     datasetTest(
-        expansionWidth=10,
-        checkWidth=10,
+        expansionWidth=20,
+        checkWidth=20,
         multiSteps=100,
         T=1.0,
         consistCheck=True,
