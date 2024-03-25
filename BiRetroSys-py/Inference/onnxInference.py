@@ -1,5 +1,4 @@
 import os
-import sys
 import math
 import time
 import onnxruntime
@@ -48,7 +47,7 @@ def getMask(queryLength: int, keyLengh: int, validLength: np.ndarray):
 
 
 class onnxInfer():
-    def __init__(self, modelClass: Optional[str]="full"):
+    def __init__(self, modelClass: Optional[str]="50k"):
         assert modelClass in ["50k", "full"]
         execution = ["CUDAExecutionProvider", "CPUExecutionProvider"]
 
