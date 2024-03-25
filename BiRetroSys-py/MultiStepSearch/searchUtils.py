@@ -34,7 +34,7 @@ def loadTerminalMols(terminalMolDir:Optional[str]=None):
     if terminalMolDir is None:
         terminalMolDir = os.path.join(os.path.dirname(curDir), "Models", "origin_dict.csv")
 
-    for chunk in pd.read_csv(terminalMolDir, chunksize=1e5):
+    for chunk in pd.read_csv(terminalMolDir, chunksize=1e8):
         terminalMols.extend(list(chunk["mol"]))
     terminalMols = set(terminalMols)
     logging.info("{0} terminal molecules have been loaded.".format(len(terminalMols)))

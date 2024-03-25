@@ -1,7 +1,6 @@
 import os
 import logging
 import math
-import copy
 import numpy as np
 
 from tqdm.std import trange
@@ -148,7 +147,7 @@ class molTree:
 
         return self.hasFound
 
-    def search(self, steps: int, name: str="Tree", bestName: str="bestRoute", earlyStop: int=0, lowerbound: float=0.05, consistCheck: bool=True):
+    def search(self, steps: int, name: str="Tree", bestName: str="bestRoute", earlyStop: int=0, lowerbound: float=0.1, consistCheck: bool=True, checkLowerBound: float=0.01):
         if not self.hasFound:
             tqdmSteps = trange(steps)
             for step in tqdmSteps:
@@ -195,7 +194,7 @@ class molTree:
                     consistRes, consistScore = [], []
                     checkRes, checkScore = self.checkFun(checkInput, "")
                     for i, (res, score) in enumerate(zip(checkRes, checkScore)):
-                        if nextNode.mol in res and score[res.index(nextNode.mol)] >= lowerbound:
+                        if nextNode.mol in res and score[res.index(nextNode.mol)] >= checkLowerBound:
                             idx = res.index(nextNode.mol)
                             consistRes.append(splitRes[i])
                             consistScore.append(splitScore[i] * score[idx])
