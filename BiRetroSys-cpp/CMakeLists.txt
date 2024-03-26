@@ -21,11 +21,7 @@ option(USE_PARALLEL "Use OpenMP for parallel programming" OFF)
 
 project(${PRJ})
 
-# for MolHandler
-# set(Python_ROOT_DIR "/Users/sophie/anaconda3/envs/BiRetroSys")
-# find_package (Python COMPONENTS Interpreter Development)
-# find_package(pybind11 REQUIRED)
-
+# need to set your own pkgconfig directory
 set(ENV{PKG_CONFIG_PATH} "/opt/homebrew/lib/pkgconfig")
 
 find_package(Eigen3 REQUIRED)
@@ -50,8 +46,8 @@ add_subdirectory(Inference)
 add_subdirectory(Search)
 add_subdirectory(Test)
 
-# add_executable(${PRJ} "${PROJECT_SOURCE_DIR}/Test/src/search_test.cpp")
 # add_executable(${PRJ} "${PROJECT_SOURCE_DIR}/Search/src/valueFunction.cpp")
+# add_executable(${PRJ} "${PROJECT_SOURCE_DIR}/Test/src/search_test.cpp")
 add_executable(${PRJ} "get_search.cpp")
 
 target_link_libraries(${PRJ} PRIVATE MolHandler Inference Search Test)
