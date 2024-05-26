@@ -1,4 +1,3 @@
-#http://101.132.186.90:10327/api/v1/client/subscribe?token=2ddf2d203fcd98f7fa354def9756a19d
 cmake_minimum_required(VERSION 3.21)
 
 if (NOT CMAKE_BUILD_TYPE)
