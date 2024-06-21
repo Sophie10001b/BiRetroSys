@@ -85,21 +85,22 @@ namespace Search {
 
         ~searchTree();
 
+        std::vector<float> valueFun(const std::vector<str> &smis);
+        std::vector<std::unordered_map<str, float>> inferFun(const std::vector<str> &smis, const bool isRetro=true);
+        std::pair<std::vector<std::vector<str>>, std::vector<float>> filterRun(const str &expandSmi, const std::vector<std::unordered_map<str, float>> &expandResults, const float lowerBound, const bool consistCheck, const float checkLowerBound);
+
+        bool finishSearch();
+        void visualization(const str &name);
+        void visualizationBest(const str &name);
+        bool expandTree(moleculeNode *startMol, std::vector<std::vector<str>> &expandResults, std::vector<float> &scores);
+
         private:
         moleculeNode *root;
         valueModel *valModel;
         Inference::SeqAGraphInfer *inferModel;
 
-        std::vector<float> valueFun(const std::vector<str> &smis);
-        std::vector<std::unordered_map<str, float>> inferFun(const std::vector<str> &smis, const bool isRetro=true);
-        std::pair<std::vector<std::vector<str>>, std::vector<float>> filterRun(const str &expandSmi, const std::vector<std::unordered_map<str, float>> &expandResults, const float lowerBound, const bool consistCheck, const float checkLowerBound);
-
         moleculeNode *addMol(const str &mol, reactionNode *parent, float value);
         reactionNode *addReaction(const std::vector<str> &reaction, moleculeNode *parent, float cost, std::unordered_set<str> &ancestor);
-        bool expandTree(moleculeNode *startMol, std::vector<std::vector<str>> &expandResults, std::vector<float> &scores);
-        bool finishSearch();
-        void visualization(const str &name);
-        void visualizationBest(const str &name);
     };
 
     void loadTerminalMols(std::unordered_set<str> &finalSet, str &&molPath="");

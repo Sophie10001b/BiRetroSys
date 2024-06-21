@@ -73,8 +73,8 @@ namespace Search {
         
         str nodeColor = this->isOpen ? "lightgrey" : "aquamarine";
 
-        if (this->hasFound) nodeColor = "lightblue";
-        else if (this->isTerminal) nodeColor = "lightyellow";
+        if (this->isTerminal) nodeColor = "lightyellow";
+        else if (this->hasFound) nodeColor = "lightblue";
         agsafeset(this->gvnode, "color", nodeColor.c_str(), "");
         agsafeset(this->gvnode, "shape", "box", "");
         agsafeset(this->gvnode, "style", "filled", "");
@@ -339,7 +339,7 @@ namespace Search {
             if (std::get_if<moleculeNode*>(&__node)){
                 auto node = std::get<moleculeNode*>(__node);
                 auto parent = std::get<reactionNode*>(__parent);
-                if (parent) auto bond = agedge(G, parent->gvnode, node->gvnode, "", 1);
+                if (parent) auto bond = agedge(G, parent->gvnode, node->gvnode, nullptr, 1);
                 if (node->children.size() > 0){
                     for (auto &p : node->children){
                         p->vizPrepare(G);
@@ -352,8 +352,9 @@ namespace Search {
                 auto node = std::get<reactionNode*>(__node);
                 auto parent = std::get<moleculeNode*>(__parent);
                 str bondLabel = std::to_string(exp(-node->cost));
-                bondLabel = bondLabel.substr(0, bondLabel.find('.') + 3);
-                auto bond = agedge(G, parent->gvnode, node->gvnode, bondLabel.data(), 1);
+                bondLabel = bondLabel.substr(0, bondLabel.find('.') + 5);
+                auto bond = agedge(G, parent->gvnode, node->gvnode, nullptr, 1);
+                agsafeset(bond, "label", bondLabel.c_str(), "");
                 if (node->children.size() > 0){
                     for (auto &p : node->children){
                         p->vizPrepare(G);
@@ -388,13 +389,14 @@ namespace Search {
                         if (p->hasFound && (!bestReaction || p->cost < bestReaction->cost)) bestReaction = p;
                     }
                     str bondLabel = std::to_string(exp(-bestReaction->cost));
-                    bondLabel = bondLabel.substr(0, bondLabel.find('.') + 3);
+                    bondLabel = bondLabel.substr(0, bondLabel.find('.') + 5);
                     bestReaction->vizPrepare(G);
-                    auto bond = agedge(G, node->gvnode, bestReaction->gvnode, bondLabel.data(), 1);
+                    auto bond = agedge(G, node->gvnode, bestReaction->gvnode, nullptr, 1);
+                    agsafeset(bond, "label", bondLabel.c_str(), "");
 
                     for (auto p : bestReaction->children){
                         p->vizPrepare(G);
-                        auto chbond = agedge(G, bestReaction->gvnode, p->gvnode, "", 1);
+                        auto chbond = agedge(G, bestReaction->gvnode, p->gvnode, nullptr, 1);
                         qNode.push(p);
                     }
                 }
